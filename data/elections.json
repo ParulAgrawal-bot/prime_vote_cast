@@ -1,0 +1,12 @@
+[
+  { "title": "District 4 City Council", "status": "active", "type": "District", "region": "Metropolis" },
+  { "title": "School Board Election", "status": "active", "type": "City-Wide", "region": "Metropolis" },
+  { "title": "Ballot Measure J — Housing", "status": "upcoming", "type": "Ballot Measures", "region": "Metropolis" },
+  { "title": "District 7 Special Election", "status": "upcoming", "type": "District", "region": "Metropolis" },
+  { "title": "Ballot Measure K — Transit", "status": "closed", "type": "Ballot Measures", "region": "Metropolis" },
+  { "title": "District 2 Council — 2025", "status": "closed", "type": "District", "region": "Metropolis" },
+
+  { "title": "Ward 12 Municipal Council", "status": "active", "type": "District", "region": "Pune" },
+  { "title": "City Board Election", "status": "active", "type": "City-Wide", "region": "Mumbai" }
+]
+
