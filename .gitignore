@@ -36,6 +36,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local vote ledger (aadhaar + choice — do not commit real data)
+/data/votes.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# clerk configuration (can include secrets)
+/.clerk/
