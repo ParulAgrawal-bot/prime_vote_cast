@@ -4,14 +4,20 @@ import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
+interface NavItem {
+  readonly href: string;
+  readonly label: string;
+  readonly exact?: boolean; // Safe optional boolean definition
+}
 
-const NAV_ITEMS = [
-  { href: "/", label: "Home", exact: true },
-  { href: "/elections", label: "Elections" },
-  { href: "/vote_now", label: "Vote Now" },
-  { href: "/results", label: "Results" },
-  { href: "/help", label: "Help" },
-] as const;
+// 2. Attach the NavItem array type definition directly here instead of using 'as const'
+const NAV_ITEMS: NavItem[] = [
+  { href: "/", label: "🏠 Home", exact: true },
+  { href: "/elections", label: "🗳️ Elections" },
+  { href: "/vote_now", label: "✓ Vote" },
+  { href: "/results", label: "📊 Results" },
+  { href: "/help", label: "❓ Help" },
+];
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -30,128 +36,160 @@ export default function Navbar() {
     setMenuOpen(false);
   }, [pathname]);
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.navbar-container')) {
+        setMenuOpen(false);
+      }
+    };
+
+    if (menuOpen) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [menuOpen]);
+
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 
-        .navbar {
+        .navbar-container {
           position: sticky;
           top: 0;
           left: 0;
           right: 0;
-          z-index: 50;
+          z-index: 100;
           font-family: 'DM Sans', sans-serif;
+          padding: 0 var(--spacing-md);
+          margin-bottom: var(--spacing-md);
         }
 
         .navbar-inner {
-          margin: 12px auto 20px;
-          max-width: 1200px;
-          width: calc(100% - 48px);
-          background: rgba(10, 10, 14, 0.85);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
-          padding: 0 24px;
+          max-width: 1400px;
+          width: 100%;
+          margin: 0 auto;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(30, 60, 114, 0.1);
+          border-radius: var(--radius-lg);
+          padding: var(--spacing-md) var(--spacing-lg);
           display: flex;
           align-items: center;
           justify-content: space-between;
-          height: 60px;
-          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255,255,255,0.04) inset;
+          height: 64px;
+          box-shadow: var(--shadow-md);
+          transition: var(--transition-fast);
+        }
+
+        .navbar-inner:hover {
+          box-shadow: var(--shadow-lg);
+          border-color: rgba(30, 60, 114, 0.15);
         }
 
         .logo {
-          font-family: 'Syne', sans-serif;
-          font-size: 20px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 18px;
           font-weight: 700;
-          color: #fff;
+          color: var(--primary-dark);
           text-decoration: none;
           letter-spacing: -0.5px;
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: var(--spacing-sm);
+          transition: var(--transition-fast);
+        }
+
+        .logo:hover {
+          opacity: 0.8;
         }
 
         .logo-dot {
-          width: 8px;
-          height: 8px;
+          width: 10px;
+          height: 10px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #6ee7b7, #3b82f6);
-          box-shadow: 0 0 10px rgba(110, 231, 183, 0.5);
+          background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-blue) 100%);
+          box-shadow: 0 0 12px rgba(110, 231, 183, 0.4);
+          animation: pulse 2s ease-in-out infinite;
         }
 
         .nav-links {
           display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 8px;
           list-style: none;
           margin: 0;
           padding: 0;
         }
 
         .nav-links a {
-          color: rgba(255, 255, 255, 0.55);
+          color: var(--gray-600);
           text-decoration: none;
           font-size: 14px;
           font-weight: 500;
-          padding: 6px 12px;
-          border-radius: 8px;
-          transition: color 0.2s, background 0.2s;
+          padding: 8px 14px;
+          border-radius: var(--radius-md);
+          transition: var(--transition-fast);
+          white-space: nowrap;
         }
 
         .nav-links a:hover {
-          color: #fff;
-          background: rgba(255, 255, 255, 0.07);
+          color: var(--primary);
+          background: rgba(30, 60, 114, 0.08);
         }
 
         .nav-links a.active {
-          color: #fff;
-          background: rgba(255, 255, 255, 0.12);
+          color: var(--primary);
+          background: rgba(30, 60, 114, 0.12);
+          font-weight: 600;
         }
 
         .nav-actions {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 12px;
+          margin-left: auto;
         }
 
         .btn-signin {
           background: transparent;
-          color: rgba(255, 255, 255, 0.7);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          padding: 8px 18px;
-          border-radius: 10px;
-          font-size: 13px;
-          font-weight: 500;
-          font-family: 'DM Sans', sans-serif;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .btn-signin:hover {
-          color: #fff;
-          border-color: rgba(255, 255, 255, 0.3);
-          background: rgba(255, 255, 255, 0.06);
-        }
-
-        .btn-signup {
-          background: linear-gradient(135deg, #6ee7b7 0%, #3b82f6 100%);
-          color: #0a0a0e;
-          border: none;
-          padding: 8px 18px;
-          border-radius: 10px;
+          color: var(--primary);
+          border: 1.5px solid var(--primary);
+          padding: 8px 20px;
+          border-radius: var(--radius-md);
           font-size: 13px;
           font-weight: 600;
           font-family: 'DM Sans', sans-serif;
           cursor: pointer;
-          transition: all 0.2s;
-          box-shadow: 0 2px 12px rgba(110, 231, 183, 0.25);
+          transition: var(--transition-fast);
+        }
+
+        .btn-signin:hover {
+          background: var(--primary);
+          color: white;
+          transform: translateY(-2px);
+        }
+
+        .btn-signup {
+          background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-blue) 100%);
+          color: white;
+          border: none;
+          padding: 8px 20px;
+          border-radius: var(--radius-md);
+          font-size: 13px;
+          font-weight: 600;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          transition: var(--transition-fast);
+          box-shadow: 0 4px 12px rgba(110, 231, 183, 0.3);
         }
 
         .btn-signup:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 20px rgba(110, 231, 183, 0.4);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(110, 231, 183, 0.4);
         }
 
         .user-button-wrapper {
@@ -165,176 +203,229 @@ export default function Navbar() {
           border: none;
           cursor: pointer;
           padding: 6px;
-          color: rgba(255,255,255,0.7);
+          color: var(--primary);
+          font-size: 24px;
+          transition: var(--transition-fast);
+        }
+
+        .mobile-toggle:hover {
+          opacity: 0.7;
         }
 
         .mobile-menu {
           display: none;
           position: fixed;
-          top: 85px;
-          left: 20px;
-          right: 20px;
-          background: rgba(10, 10, 14, 0.97);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
-          padding: 16px;
-          z-index: 49;
+          top: 78px;
+          left: var(--spacing-md);
+          right: var(--spacing-md);
+          background: rgba(255, 255, 255, 0.98);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(30, 60, 114, 0.15);
+          border-radius: var(--radius-lg);
+          padding: var(--spacing-md);
+          z-index: 99;
           flex-direction: column;
-          gap: 8px;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+          gap: 6px;
+          box-shadow: var(--shadow-xl);
+          max-height: calc(100vh - 120px);
+          overflow-y: auto;
         }
 
         .mobile-menu.open {
           display: flex;
         }
 
-        .mobile-menu a, .mobile-menu button {
-          color: rgba(255,255,255,0.7);
+        .mobile-menu a,
+        .mobile-menu button {
+          color: var(--gray-600);
           text-decoration: none;
           font-size: 15px;
           font-weight: 500;
-          padding: 10px 14px;
-          border-radius: 10px;
-          transition: all 0.2s;
+          padding: 12px 16px;
+          border-radius: var(--radius-md);
+          transition: var(--transition-fast);
           border: none;
           background: none;
           cursor: pointer;
+          text-align: left;
         }
 
-        .mobile-menu a:hover, .mobile-menu button:hover {
-          color: #fff;
-          background: rgba(255,255,255,0.07);
+        .mobile-menu a:hover,
+        .mobile-menu button:hover {
+          color: var(--primary);
+          background: rgba(30, 60, 114, 0.08);
         }
 
         .mobile-menu a.active {
-          color: #fff;
-          background: rgba(255, 255, 255, 0.1);
+          color: var(--primary);
+          background: rgba(30, 60, 114, 0.12);
+          font-weight: 600;
         }
 
         .mobile-divider {
           height: 1px;
-          background: rgba(255,255,255,0.08);
-          margin: 4px 0;
+          background: rgba(30, 60, 114, 0.1);
+          margin: 8px 0;
         }
 
         .mobile-actions {
           display: flex;
           flex-direction: column;
           gap: 8px;
-          padding-top: 4px;
+          padding-top: 8px;
         }
 
         .mobile-actions .btn-signin,
         .mobile-actions .btn-signup {
           width: 100%;
           text-align: center;
-          padding: 11px 18px;
+          padding: 12px 16px;
           font-size: 14px;
         }
 
         @media (max-width: 1024px) {
-          .navbar-inner { width: calc(100% - 32px); }
-          .nav-links a { padding: 6px 10px; font-size: 13px; }
+          .navbar-inner {
+            padding: var(--spacing-md) var(--spacing-md);
+          }
+          .nav-links a {
+            padding: 8px 12px;
+            font-size: 13px;
+          }
         }
 
         @media (max-width: 768px) {
-          .nav-links { display: none; }
-          .nav-actions { display: none; }
-          .mobile-toggle { display: flex; }
+          .nav-links {
+            display: none;
+          }
+          .nav-actions {
+            display: none;
+          }
+          .mobile-toggle {
+            display: flex;
+          }
+          .navbar-inner {
+            height: 56px;
+          }
+          .navbar-container {
+            padding: 0 var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+          }
+          .mobile-menu {
+            left: var(--spacing-sm);
+            right: var(--spacing-sm);
+            top: 70px;
+          }
         }
 
         @media (max-width: 480px) {
-          .navbar-inner { width: calc(100% - 24px); margin: 10px auto 16px; padding: 0 14px; height: 56px; }
-          .mobile-menu { left: 12px; right: 12px; top: 78px; }
+          .navbar-inner {
+            padding: var(--spacing-sm) var(--spacing-md);
+            height: 52px;
+          }
+          .logo {
+            font-size: 16px;
+          }
+          .logo-dot {
+            width: 8px;
+            height: 8px;
+          }
+          .navbar-container {
+            padding: 0 var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+          }
+          .mobile-menu {
+            left: 8px;
+            right: 8px;
+            top: 68px;
+            padding: 12px;
+            gap: 4px;
+          }
+          .mobile-menu a,
+          .mobile-menu button {
+            padding: 10px 12px;
+            font-size: 14px;
+          }
         }
       `}</style>
 
-      <nav className="navbar">
+      <nav className="navbar-container">
         <div className="navbar-inner">
-          {/* Logo */}
           <Link href="/" className="logo">
-            <span className="logo-dot" />
-            PrimeCast Vote
+            <span className="logo-dot"></span>
+            <span>PrimeVote</span>
           </Link>
 
-          {/* Desktop nav links */}
-          <ul className="nav-links">
-            {NAV_ITEMS.map(({ href, label, exact }) => (
-              <li key={href}>
-                <Link href={href} className={isActive(href, !!exact) ? "active" : undefined}>
-                  {label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+      <ul className="nav-links">
+  {NAV_ITEMS.map((item) => {
+    // 2. Safely cast or extract 'exact' using 'in' validation to satisfy the compiler
+    const exactMatch = "exact" in item ? item.exact : false;
+    
+    return (
+      <li key={item.href}>
+        <Link
+          href={item.href}
+          className={isActive(item.href, exactMatch) ? "active" : ""}
+        >
+          {item.label}
+        </Link>
+      </li>
+    );
+  })}
+</ul>
 
-          {/* Desktop auth actions */}
           <div className="nav-actions">
-            {isSignedIn ? (
-              <div className="user-button-wrapper">
-                <UserButton/>
-              </div>
-            ) : (
+            {!isSignedIn ? (
               <>
-                <SignInButton mode="modal">
-                  <button className="btn-signin">Sign in</button>
+                <SignInButton>
+                  <button className="btn-signin">Sign In</button>
                 </SignInButton>
-                <SignUpButton mode="modal">
-                  <button className="btn-signup">Get started</button>
+                <SignUpButton>
+                  <button className="btn-signup">Sign Up</button>
                 </SignUpButton>
               </>
+            ) : (
+              <div className="user-button-wrapper">
+                <UserButton />
+              </div>
             )}
           </div>
 
-          {/* Mobile hamburger */}
           <button
             className="mobile-toggle"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
           >
-            {menuOpen ? (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            ) : (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <line x1="3" y1="8" x2="21" y2="8" />
-                <line x1="3" y1="16" x2="21" y2="16" />
-              </svg>
-            )}
+            {menuOpen ? '✕' : '☰'}
           </button>
         </div>
 
-        {/* Mobile dropdown menu */}
-        <div className={`mobile-menu ${menuOpen ? "open" : ""}`}>
-          {NAV_ITEMS.map(({ href, label, exact }) => (
+        {/* Mobile Menu */}
+        <div className={`mobile-menu${menuOpen ? ' open' : ''}`}>
+          {NAV_ITEMS.map((item) => (
             <Link
-              key={href}
-              href={href}
-              onClick={() => setMenuOpen(false)}
-              className={isActive(href, !!exact) ? "active" : undefined}
+              key={item.href}
+              href={item.href}
+              className={isActive(item.href, item.exact) ? "active" : ""}
             >
-              {label}
+              {item.label}
             </Link>
           ))}
 
-          <div className="mobile-divider" />
+          <div className="mobile-divider"></div>
 
           <div className="mobile-actions">
-            {isSignedIn ? (
-              <div className="user-button-wrapper">
-                <UserButton/>
-              </div>
-            ) : (
+            {!isSignedIn ? (
               <>
-                <SignInButton mode="modal">
-                  <button className="btn-signin" onClick={() => setMenuOpen(false)}>Sign in</button>
+                <SignInButton>
+                  <button className="btn-signin">Sign In</button>
                 </SignInButton>
-                <SignUpButton mode="modal">
-                  <button className="btn-signup" onClick={() => setMenuOpen(false)}>Get started</button>
+                <SignUpButton>
+                  <button className="btn-signup">Sign Up</button>
                 </SignUpButton>
               </>
+            ) : (
+              <UserButton />
             )}
           </div>
         </div>

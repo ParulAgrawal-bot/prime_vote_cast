@@ -7,12 +7,30 @@ import styles from '../../styles/result.module.css';
 
 export default function ResultsPage() {
   const [lastUpdated, setLastUpdated] = useState('Today, 4:42 PM');
+  const [voteResults, setVoteResults] = useState(null);
+  const [loading, setLoading] = useState(true);
   const pageRef = useRef(null);
+
+  const fetchResults = async () => {
+    try {
+      const response = await fetch('/api/results');
+      if (response.ok) {
+        const data = await response.json();
+        setVoteResults(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch results:', error);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
     // Fix scrolling issues
     document.body.style.overflow = 'auto';
     document.documentElement.style.overflow = 'auto';
+
+    // Fetch results on mount
+    fetchResults();
 
     const updateTime = () => {
       const now = new Date();
@@ -23,7 +41,13 @@ export default function ResultsPage() {
       })}`);
     };
     updateTime();
-    const interval = setInterval(updateTime, 60000);
+    
+    // Refresh every 60 seconds
+    const interval = setInterval(() => {
+      fetchResults();
+      updateTime();
+    }, 60000);
+    
     return () => clearInterval(interval);
   }, []);
 
@@ -66,19 +90,11 @@ export default function ResultsPage() {
               </svg>
               Last updated: {lastUpdated}
             </span>
-            <button className={styles['export-btn']} type="button">
-              <svg viewBox="0 0 24 24" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              Export Results
-            </button>
           </div>
         </div>
 
         {/* Stats Strip */}
-        <StatsStrip />
+        <StatsStrip voteResults={voteResults} />
 
         {/* Featured Race */}
         <div
@@ -88,7 +104,7 @@ export default function ResultsPage() {
         >
           Featured Race
         </div>
-        <FeaturedRace />
+        <FeaturedRace voteResults={voteResults} loading={loading} />
 
         {/* All Races */}
         <div
@@ -118,7 +134,10 @@ export default function ResultsPage() {
 }
 
 // COMPLETE Stats Strip Component
-function StatsStrip() {
+function StatsStrip({ voteResults }) {
+  const totalVotes = voteResults?.total || 0;
+  const turnoutPercent = ((totalVotes / 208124) * 100).toFixed(1);
+  
   return (
     <div className={styles['stats-strip']}>
       <div className={styles['stat-card']} data-results-animate>
@@ -129,9 +148,9 @@ function StatsStrip() {
             <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
           </svg>
         </div>
-        <div className={styles['stat-val']}>142,390</div>
+        <div className={styles['stat-val']}>{totalVotes.toLocaleString()}</div>
         <div className={styles['stat-lbl']}>Total Votes Cast</div>
-        <div className={styles['stat-sub']}>↑ 12,840 since yesterday</div>
+        <div className={styles['stat-sub']}>Real-time count</div>
       </div>
       <div className={styles['stat-card']} data-results-animate>
         <div className={styles['stat-icon']}>
@@ -139,9 +158,9 @@ function StatsStrip() {
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
           </svg>
         </div>
-        <div className={styles['stat-val']}>68.4%</div>
+        <div className={styles['stat-val']}>{turnoutPercent}%</div>
         <div className={styles['stat-lbl']}>Voter Turnout</div>
-        <div className={styles['stat-sub']}>↑ 4.2% vs. 2022</div>
+        <div className={styles['stat-sub']}>of 208,124 registered</div>
       </div>
       <div className={styles['stat-card']} data-results-animate>
         <div className={styles['stat-icon']}>
@@ -150,9 +169,9 @@ function StatsStrip() {
             <path d="M3 9h18M9 21V9"/>
           </svg>
         </div>
-        <div className={styles['stat-val']}>5</div>
-        <div className={styles['stat-lbl']}>Active Races</div>
-        <div className={styles['stat-sub']}>2 calling imminent</div>
+        <div className={styles['stat-val']}>3</div>
+        <div className={styles['stat-lbl']}>Active Candidates</div>
+        <div className={styles['stat-sub']}>All options live</div>
       </div>
       <div className={styles['stat-card']} data-results-animate>
         <div className={styles['stat-icon']}>
@@ -161,144 +180,174 @@ function StatsStrip() {
             <polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
         </div>
-        <div className={styles['stat-val']}>84%</div>
-        <div className={styles['stat-lbl']}>Precincts Reporting</div>
-        <div className={styles['stat-sub']}>269 of 320 precincts</div>
+        <div className={styles['stat-val']}>100%</div>
+        <div className={styles['stat-lbl']}>Results Live</div>
+        <div className={styles['stat-sub']}>All votes counted</div>
       </div>
     </div>
   );
 }
 
 // COMPLETE Featured Race Component
-function FeaturedRace() {
+function FeaturedRace({ voteResults, loading }) {
+  const totalVotes = voteResults?.total || 0;
+  
   return (
     <div className={styles['featured-race']} data-results-animate>
       <div className={styles['featured-top']}>
         <div className={styles['race-meta']}>
-          <div className={styles['race-type']}>City-Wide · Mayoral General Election · 2026</div>
-          <h2 className={styles['race-title']}>Metropolis Mayor</h2>
-          <p className={styles['race-desc']}>Three candidates competing for a four-year term leading Metropolis. 84% of precincts reporting.</p>
+          <div className={styles['race-type']}>City-Wide · Voting General Election · 2026</div>
+          <h2 className={styles['race-title']}>Election Results</h2>
+          <p className={styles['race-desc']}>Real-time vote tallies showing current election results.</p>
         </div>
         <div className={styles['race-status']}>
           <span className={`${styles['status-pill']} ${styles['pill-live']}`}>
             <span className={styles.dot}></span>Counting Live
           </span>
-          <span className={styles['pct-counted']}>84% precincts in</span>
+          <span className={styles['pct-counted']}>{loading ? 'Loading...' : 'Live'}</span>
         </div>
       </div>
 
       <div className={styles['race-visual']}>
-        <DonutChart />
-        <CandidateList />
+        <DonutChart voteResults={voteResults} />
+        <CandidateList voteResults={voteResults} />
       </div>
 
       <div className={styles['race-footer']}>
         <div className={styles['race-footer-stats']}>
           <div className={styles['rf-stat']}>
-            <div className={styles['rf-val']}>142,390</div>
+            <div className={styles['rf-val']}>{totalVotes.toLocaleString()}</div>
             <div className={styles['rf-lbl']}>Votes Cast</div>
           </div>
           <div className={styles['rf-stat']}>
-            <div className={styles['rf-val']}>68.4%</div>
-            <div className={styles['rf-lbl']}>Turnout</div>
+            <div className={styles['rf-val']}>100%</div>
+            <div className={styles['rf-lbl']}>Results</div>
           </div>
           <div className={styles['rf-stat']}>
-            <div className={styles['rf-val']}>208,124</div>
-            <div className={styles['rf-lbl']}>Registered</div>
+            <div className={styles['rf-val']}>3</div>
+            <div className={styles['rf-lbl']}>Options</div>
           </div>
           <div className={styles['rf-stat']}>
-            <div className={styles['rf-val']}>+8%</div>
-            <div className={styles['rf-lbl']}>Harlow margin</div>
+            <div className={styles['rf-val']}>{voteResults?.options?.[0]?.percentage || 0}%</div>
+            <div className={styles['rf-lbl']}>Leader</div>
           </div>
         </div>
-        <button className={styles['detail-btn']} type="button">
-          Full Breakdown
-          <svg viewBox="0 0 24 24" strokeWidth="2">
-            <line x1="5" y1="12" x2="19" y2="12"/>
-            <polyline points="12 5 19 12 12 19"/>
-          </svg>
-        </button>
+        
       </div>
     </div>
   );
 }
 
 // COMPLETE Donut Chart Component
-function DonutChart() {
+function DonutChart({ voteResults }) {
+  if (!voteResults || !voteResults.options) {
+    return (
+      <div className={styles['donut-wrap']}>
+        <div style={{ textAlign: 'center', padding: '20px' }}>Loading results...</div>
+      </div>
+    );
+  }
+
+  const options = voteResults.options;
+  const leader = options.length > 0 ? options[0] : null;
+  
+  // Calculate SVG arc values (percentages of 502.65 circumference)
+  const circumference = 502.65;
+  const strokeDasharray1 = (options[0]?.percentage / 100) * circumference;
+  const strokeDasharray2 = (options[1]?.percentage / 100) * circumference;
+  const strokeDasharray3 = (options[2]?.percentage / 100) * circumference;
+  
+  const offset2 = strokeDasharray1;
+  const offset3 = strokeDasharray1 + strokeDasharray2;
+  
   return (
     <div className={styles['donut-wrap']}>
       <svg viewBox="0 0 200 200">
         <circle cx="100" cy="100" r="80" fill="none" stroke="#eaf4fd" strokeWidth="24"/>
         <circle 
           cx="100" cy="100" r="80" fill="none" stroke="#1748a0" strokeWidth="24"
-          strokeDasharray="230.4 502.65" strokeDashoffset="0" strokeLinecap="butt"
+          strokeDasharray={`${strokeDasharray1} ${circumference}`} strokeDashoffset="0" strokeLinecap="butt"
         />
         <circle 
           cx="100" cy="100" r="80" fill="none" stroke="#c0392b" strokeWidth="24"
-          strokeDasharray="190.4 502.65" strokeDashoffset="-230.4" strokeLinecap="butt"
+          strokeDasharray={`${strokeDasharray2} ${circumference}`} strokeDashoffset={`-${offset2}`} strokeLinecap="butt"
         />
         <circle 
           cx="100" cy="100" r="80" fill="none" stroke="#4a8fd8" strokeWidth="24"
-          strokeDasharray="80.4 502.65" strokeDashoffset="-420.8" strokeLinecap="butt"
+          strokeDasharray={`${strokeDasharray3} ${circumference}`} strokeDashoffset={`-${offset3}`} strokeLinecap="butt"
         />
         <circle cx="100" cy="100" r="66" fill="white"/>
       </svg>
       <div className={styles['donut-center']}>
-        <div className={styles['donut-winner']}>James<br/>Harlow</div>
+        <div className={styles['donut-winner']}>{leader?.option || 'N/A'}<br/>{leader?.percentage || 0}%</div>
         <div className={styles['donut-sub']}>Leading</div>
       </div>
     </div>
   );
 }
 
+
 // COMPLETE Candidate List Component
-function CandidateList() {
+function CandidateList({ voteResults }) {
+  if (!voteResults || !voteResults.options) {
+    return (
+      <div className={styles['candidates-list']}>
+        <div style={{ textAlign: 'center', padding: '20px' }}>Loading candidates...</div>
+      </div>
+    );
+  }
+
+  const candidateNames = {
+    'Option A': 'James Harlow',
+    'Option B': 'Sandra Reeves',
+    'Option C': 'Marcus Chen'
+  };
+
+  const avatarClasses = {
+    'Option A': 'av-1',
+    'Option B': 'av-2',
+    'Option C': 'av-3'
+  };
+
+  const avatarInitials = {
+    'Option A': 'JH',
+    'Option B': 'SR',
+    'Option C': 'MC'
+  };
+
+  const fillClasses = {
+    'Option A': 'fill-1',
+    'Option B': 'fill-2',
+    'Option C': 'fill-3'
+  };
+
   return (
     <div className={styles['candidates-list']}>
-      <div className={styles['candidate-row']}>
-        <div className={`${styles['c-avatar']} ${styles['av-1']}`}>JH</div>
-        <div className={styles['c-info']}>
-          <div className={styles['c-name']}>
-            James Harlow <span className={styles['leading-badge']}>Leading</span>
+      {voteResults.options.map((option, index) => (
+        <div className={styles['candidate-row']} key={option.option}>
+          <div className={`${styles['c-avatar']} ${styles[avatarClasses[option.option]]}`}>
+            {avatarInitials[option.option]}
           </div>
-          <div className={styles['c-party']}>Progressive Party · 65,499 votes</div>
-          <div className={styles['bar-track']}>
-            <div className={`${styles['bar-fill']} ${styles['fill-1']}`} style={{width: '0%'}} data-w="46%"></div>
+          <div className={styles['c-info']}>
+            <div className={styles['c-name']}>
+              {candidateNames[option.option]} 
+              {index === 0 && <span className={styles['leading-badge']}>Leading</span>}
+            </div>
+            <div className={styles['c-party']}>Candidate · {option.count.toLocaleString()} votes</div>
+            <div className={styles['bar-track']}>
+              <div 
+                className={`${styles['bar-fill']} ${styles[fillClasses[option.option]]}`} 
+                style={{width: '0%'}} 
+                data-w={`${option.percentage}%`}
+              ></div>
+            </div>
           </div>
-        </div>
-        <div>
-          <div className={styles['c-pct']}>46%</div>
-          <div className={styles['c-votes']}>65,499</div>
-        </div>
-      </div>
-      <div className={styles['candidate-row']}>
-        <div className={`${styles['c-avatar']} ${styles['av-2']}`}>SR</div>
-        <div className={styles['c-info']}>
-          <div className={styles['c-name']}>Sandra Reeves</div>
-          <div className={styles['c-party']}>Reform Alliance · 54,108 votes</div>
-          <div className={styles['bar-track']}>
-            <div className={`${styles['bar-fill']} ${styles['fill-2']}`} style={{width: '0%'}} data-w="38%"></div>
-          </div>
-        </div>
-        <div>
-          <div className={styles['c-pct']}>38%</div>
-          <div className={styles['c-votes']}>54,108</div>
-        </div>
-      </div>
-      <div className={styles['candidate-row']}>
-        <div className={`${styles['c-avatar']} ${styles['av-3']}`}>MC</div>
-        <div className={styles['c-info']}>
-          <div className={styles['c-name']}>Marcus Chen</div>
-          <div className={styles['c-party']}>Green Metropolis · 22,783 votes</div>
-          <div className={styles['bar-track']}>
-            <div className={`${styles['bar-fill']} ${styles['fill-3']}`} style={{width: '0%'}} data-w="16%"></div>
+          <div>
+            <div className={styles['c-pct']}>{option.percentage}%</div>
+            <div className={styles['c-votes']}>{option.count.toLocaleString()}</div>
           </div>
         </div>
-        <div>
-          <div className={styles['c-pct']}>16%</div>
-          <div className={styles['c-votes']}>22,783</div>
-        </div>
-      </div>
+      ))}
     </div>
   );
 }
@@ -553,3 +602,5 @@ function TurnoutSection() {
     </div>
   );
 }
+
+

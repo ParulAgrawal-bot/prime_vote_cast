@@ -88,10 +88,7 @@ export default function Home() {
         <span>Secure.</span> &nbsp;Private. &nbsp;Transparent. &nbsp;— PrimeVote Cast
       </div>
 
-      <div className="status-bar">
-        <div className="status-dot" />
-        <span className="status-text">System Online · Election Active · Polls Close Nov 5, 2026</span>
-      </div>
+
 
       <div
         className={`modal-overlay${modal ? " open" : ""}`}

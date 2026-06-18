@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { registerIfMissing } from "@/lib/eligibleVoters";
-import { hasVoted } from "@/lib/voteStore";
+import { registerIfMissing, isMinimumAge } from "@/lib/eligibleVoters";
 
 export const runtime = "nodejs";
 
@@ -16,6 +15,14 @@ export async function POST(req) {
       );
     }
 
+    // Check if voter is 18 years or older
+    if (!isMinimumAge(dob, 18)) {
+      return NextResponse.json(
+        { error: "You must be 18 years or older to vote." },
+        { status: 403 }
+      );
+    }
+
     const { created, dobMismatch } = registerIfMissing(aadhaarStr, dob);
     if (dobMismatch) {
       return NextResponse.json(
@@ -24,19 +31,12 @@ export async function POST(req) {
       );
     }
 
-    if (hasVoted(aadhaarStr)) {
-      return NextResponse.json(
-        { error: "You have already voted.", hasVoted: true },
-        { status: 409 }
-      );
-    }
-
     return NextResponse.json(
       {
         success: true,
         message: created
           ? "New voter registered and verified."
-          : "Voter verified.",
+          : "Voter verified. You can proceed to vote.",
         hasVoted: false,
         registeredNow: created,
       },

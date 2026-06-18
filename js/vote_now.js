@@ -75,6 +75,10 @@
         hasVoted = true;
         submitBtn.disabled = true;
         submitBtn.textContent = 'Vote Submitted ✓';
+        redirect('/results');
+      }
+      function redirect(path) {
+        window.location.href = path;
       }
 
       // Check if already voted
@@ -87,24 +91,43 @@
       }
 
       // Handle vote submission
-      function handleSubmit(e) {
+      const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        const selected = document.querySelector('input[name="vote"]:checked');
-        if (!selected) {
-          showMessage('Please select an option before voting.', 'error');
+        if (!isVerified) {
+          showMessage('Verify your identity first.', 'error');
           return;
         }
-
-        const choice = selected.value;
-        counts[choice]++;
-        saveCounts();
-        localStorage.setItem('user_vote_v2', choice);
-        
-        renderResults();
-        markVoted(choice);
-        showMessage(`Thank you! Your vote for "${choice}" has been recorded.`, 'success');
-      }
+        if (hasVoted) return showMessage('You have already voted.', 'error');
+        if (!selectedOption) return showMessage('Please select an option.', 'error');
+      
+        try {
+          const encryptedVote = encrypt(selectedOption, 'user_vote_v2', secretKey); // Use secretKey directly
+          
+          const response = await fetch('/api/vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              aadhaar: aadhaar.trim(),
+              selection: encryptedVote, // Encrypted vote
+            }),
+          });
+      
+          const data = await response.json().catch(() => ({}));
+          if (response.ok) {
+            setHasVoted(true);
+            showMessage(data.message || 'Your vote was saved successfully!', 'success', 2000);
+            
+            // Redirect to home page after 2 seconds
+            setTimeout(() => {
+              window.location.href = '/'; // Replace with your home page path
+            }, 2000);
+          } else {
+            showMessage(data.error || `Voting failed (${response.status})`, 'error');
+          }
+        } catch (err) {
+          showMessage(err?.message || 'Network error during voting', 'error');
+        }
+      };
 
       // Initialize
       loadCounts();
